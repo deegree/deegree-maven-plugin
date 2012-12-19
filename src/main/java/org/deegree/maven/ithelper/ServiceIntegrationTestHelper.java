@@ -114,9 +114,9 @@ public class ServiceIntegrationTestHelper {
                 throw new MojoFailureException( "Retrieving capabilities from " + address + " failed." );
             }
         } catch ( Throwable e ) {
-            log.debug( e );
+            log.debug( "Failed to retrieve capabilities.", e );
             throw new MojoFailureException( "Retrieving capabilities for " + service + " failed: "
-                                            + e.getLocalizedMessage() );
+                                            + e.getLocalizedMessage(), e );
         }
     }
 
@@ -152,14 +152,14 @@ public class ServiceIntegrationTestHelper {
         } catch ( MalformedURLException e ) {
             log.debug( e );
             throw new MojoFailureException( "Retrieving capabilities for " + service + " failed: "
-                                            + e.getLocalizedMessage() );
+                                            + e.getLocalizedMessage(), e );
         } catch ( IOException e ) {
             log.debug( e );
             throw new MojoFailureException( "Retrieving map for " + currentLayer + " failed: "
-                                            + e.getLocalizedMessage() );
+                                            + e.getLocalizedMessage(), e );
         } catch ( Throwable e ) {
             log.debug( e );
-            throw new MojoFailureException( "Layer " + currentLayer + " had no bounding box." );
+            throw new MojoFailureException( "Layer " + currentLayer + " had no bounding box.", e );
         }
     }
 
@@ -228,7 +228,7 @@ public class ServiceIntegrationTestHelper {
                     }
                 } catch ( IOException e ) {
                     throw new MojoFailureException( "KVP request checking of " + name + " failed: "
-                                                    + e.getLocalizedMessage() );
+                                                    + e.getLocalizedMessage(), e );
                 }
             }
         }
@@ -248,7 +248,7 @@ public class ServiceIntegrationTestHelper {
                     log.info( "Request test " + name + " resulted in similarity of " + sim );
                 } catch ( IOException e ) {
                     throw new MojoFailureException( "KVP request checking of " + name + " failed: "
-                                                    + e.getLocalizedMessage() );
+                                                    + e.getLocalizedMessage(), e );
                 } finally {
                     closeQuietly( reqIn );
                 }
