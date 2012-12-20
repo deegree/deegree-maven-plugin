@@ -38,7 +38,9 @@ package org.deegree.maven;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
@@ -52,47 +54,49 @@ import org.apache.maven.project.MavenProject;
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
- * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep
- *          2011) $
+ * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep 2011) $
  */
 public class ModuleListMojo extends AbstractMojo {
 
-	/**
-	 * @parameter default-value="${project}"
-	 * @required
-	 * @readonly
-	 */
-	private MavenProject project;
+    /**
+     * @parameter default-value="${project}"
+     * @required
+     * @readonly
+     */
+    private MavenProject project;
 
-	@Override
-	public void execute() throws MojoExecutionException, MojoFailureException {
+    @Override
+    public void execute()
+                            throws MojoExecutionException, MojoFailureException {
 
-		FileOutputStream fos = null;		
-		try {
-			if (!project.getPackaging().equalsIgnoreCase("pom")) {
+        FileOutputStream fos = null;
+        try {
+            if ( !project.getPackaging().equalsIgnoreCase( "pom" ) ) {
 
-				String status = project.getProperties().getProperty(
-						"deegree.module.status");
-				if (status == null) {
-					status = "unknown";
-				}
+                String status = project.getProperties().getProperty( "deegree.module.status" );
+                if ( status == null ) {
+                    status = "unknown";
+                }
 
-				File f = new File("/tmp/" + status + ".txt");
-				fos = new FileOutputStream(f, true);
-				PrintWriter writer = new PrintWriter(fos);
-				
-				writer.print("||");
-				writer.print(project.getArtifactId());
-				writer.print("||");
-				writer.print(project.getDescription());
-				writer.print("||");
-				writer.print("\n");
-				writer.close();
-			}
-		} catch (FileNotFoundException e) {
-			throw new MojoExecutionException(e.getMessage());
-		} finally {
-			IOUtils.closeQuietly(fos);
-		}
-	}
+                File f = new File( "/tmp/" + status + ".txt" );
+                fos = new FileOutputStream( f, true );
+                PrintWriter writer = new PrintWriter( new OutputStreamWriter( fos, "UTF-8" ) );
+
+                writer.print( "||" );
+                writer.print( project.getArtifactId() );
+                writer.print( "||" );
+                writer.print( project.getDescription() );
+                writer.print( "||" );
+                writer.print( "\n" );
+                writer.close();
+            }
+        } catch ( FileNotFoundException e ) {
+            throw new MojoExecutionException( e.getMessage(), e );
+        } catch ( UnsupportedEncodingException e ) {
+            throw new MojoExecutionException( e.getMessage(), e );
+        } finally {
+            IOUtils.closeQuietly( fos );
+        }
+    }
+
 }
