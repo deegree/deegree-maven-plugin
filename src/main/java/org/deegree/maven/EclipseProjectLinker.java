@@ -100,7 +100,7 @@ public class EclipseProjectLinker extends AbstractMojo {
         try {
             Runtime.getRuntime().exec( cmd );
         } catch ( IOException e ) {
-            throw new MojoExecutionException( "Unable to execute cmd: " + cmd );
+            throw new MojoExecutionException( "Unable to execute cmd: " + cmd, e );
         }
 
         if ( formatter != null ) {

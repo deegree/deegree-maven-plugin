@@ -215,9 +215,9 @@ public class Log4jMojo extends AbstractMojo {
             out.println( "#log4j.appender.logfile.layout.ConversionPattern=%d %-5p [%c] %m%n" );
             out.println();
 
-            // out.println( "# The log level for the org.reflections package (to avoid superfluous messages)." );
-            // out.println( "log4j.logger.org.reflections = WARN" );
-            // out.println();
+            out.println( "# The log level for the org.reflections package (to avoid superfluous messages)." );
+            out.println( "log4j.logger.org.reflections = FATAL" );
+            out.println();
             out.println( "# The log level for all classes that are not configured below." );
             out.println( "log4j.logger.org.deegree = " + deegreeLoggingLevel );
             out.println();
