@@ -142,7 +142,7 @@ public class WorkspaceMojo extends AbstractMojo {
             attachArtifact( log, workspaceFile );
         } catch ( Throwable e ) {
             log.debug( e );
-            throw new MojoFailureException( "Could not create workspace zip artifact: " + e.getLocalizedMessage() );
+            throw new MojoFailureException( "Could not create workspace zip artifact: " + e.getLocalizedMessage(), e );
         } finally {
             closeQuietly( out );
         }

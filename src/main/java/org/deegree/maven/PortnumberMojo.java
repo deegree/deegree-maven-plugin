@@ -80,7 +80,7 @@ public class PortnumberMojo extends AbstractMojo {
             int port = 1025;
             if ( portfile.exists() ) {
                 fis = new FileInputStream( portfile );
-                reader = new BufferedReader( new InputStreamReader( fis ) );
+                reader = new BufferedReader( new InputStreamReader( fis, "UTF-8" ) );
 
                 boolean read = false;
                 while ( !read ) {
@@ -111,7 +111,7 @@ public class PortnumberMojo extends AbstractMojo {
             project.getProperties().put( "portnumber", "" + port );
 
             FileOutputStream fos = new FileOutputStream( portfile );
-            out = new PrintStream( fos );
+            out = new PrintStream( fos, true, "UTF-8" );
             while ( ( lock = fos.getChannel().tryLock() ) == null ) {
                 try {
                     Thread.sleep( 100 );

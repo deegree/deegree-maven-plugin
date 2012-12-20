@@ -110,7 +110,7 @@ public class XMLCatalogueMojo extends AbstractMojo {
 
         PrintStream catalogOut = null;
         try {
-            catalogOut = new PrintStream( new FileOutputStream( target ) );
+            catalogOut = new PrintStream( new FileOutputStream( target ), true, "UTF-8" );
             final PrintStream catalog = catalogOut;
 
             addDependenciesToClasspath( project, artifactResolver, artifactFactory, metadataSource, localRepository );
@@ -156,7 +156,7 @@ public class XMLCatalogueMojo extends AbstractMojo {
                 }
             } );
         } catch ( Throwable t ) {
-            throw new MojoFailureException( "Creating xml catalog failed: " + t.getLocalizedMessage() );
+            throw new MojoFailureException( "Creating xml catalog failed: " + t.getLocalizedMessage(), t );
         } finally {
             closeQuietly( catalogOut );
         }
