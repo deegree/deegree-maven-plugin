@@ -35,20 +35,12 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Locale;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.doxia.siterenderer.Renderer;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.reporting.AbstractMavenReport;
+import org.apache.maven.reporting.MavenReportException;
 
 /**
  * @goal generate-modules-site
@@ -56,10 +48,19 @@ import org.apache.maven.project.MavenProject;
  * 
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
+ * @phase site
  * 
  * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep 2011) $
  */
-public class ModuleListSiteMojo extends AbstractMojo {
+public class ModuleListSiteMojo extends AbstractMavenReport {
+
+    /**
+     * Directory where reports will go.
+     * 
+     * @parameter expression="${project.reporting.outputDirectory}"
+     * @required  * @readonly  
+     */
+    private String outputDirectory;
 
     /**
      * @parameter default-value="${project}"
@@ -68,114 +69,48 @@ public class ModuleListSiteMojo extends AbstractMojo {
      */
     private MavenProject project;
 
+    /**
+     * @component
+     * @required
+     * @readonly
+     */
+    private Renderer siteRenderer;
+
     @Override
-    public void execute()
-                            throws MojoExecutionException, MojoFailureException {
-        File dir = new File( project.getBasedir(), "target/site/" );
-        dir.mkdirs();
-        List<MavenProject> modules = project.getCollectedProjects();
-
-        SortedMap<String, String> byModuleName = new TreeMap<String, String>();
-        HashSet<String> status = new HashSet<String>();
-
-        for ( MavenProject p : modules ) {
-            if ( p.getPackaging().equals( "pom" ) ) {
-                continue;
-            }
-            String st = getModuleStatus( p );
-            status.add( st );
-            byModuleName.put( p.getArtifactId(), st );
-        }
-
-        String html = generateHtml( byModuleName, status );
-        try {
-            FileUtils.write( new File( dir, "modulestatus.html" ), html );
-        } catch ( IOException e ) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    public String getOutputName() {
+        return "module-stability-status";
     }
 
-    private String generateHtml( SortedMap<String, String> byModuleName, HashSet<String> status ) {
-        StringBuilder sb = new StringBuilder();
-        sb.append( "<html><body>" );
-
-        sb.append( generateAlphabeticalTable( byModuleName ) );
-        sb.append( generateStatusTables( byModuleName, status ) );
-
-        sb.append( "</body></html>\n" );
-        return sb.toString();
+    @Override
+    public String getName( Locale locale ) {
+        return "module stability status report";
     }
 
-    private String generateStatusTables( SortedMap<String, String> byModuleName, HashSet<String> status ) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append( generateStatusTable( "ok", byModuleName ) );
-        sb.append( generateStatusTable( "check", byModuleName ) );
-        sb.append( generateStatusTable( "rework", byModuleName ) );
-        for ( String s : status ) {
-            if ( !( s.equals( "ok" ) || s.equals( "check" ) || s.equals( "rework" ) ) ) {
-                sb.append( generateStatusTable( s, byModuleName ) );
-            }
-        }
-
-        return sb.toString();
+    @Override
+    public String getDescription( Locale locale ) {
+        return "module stability status report";
     }
 
-    private String generateStatusTable( String status, SortedMap<String, String> byModuleName ) {
-        String color = colorForStatus( status );
-        StringBuilder sb = new StringBuilder();
-        sb.append( "<fieldset style='display: inline-block;'><legend>Modules with status " ).append( status ).append( "</legend>" );
-        sb.append( "<table bgcolor='" ).append( color ).append( "'>" );
-
-        for ( Entry<String, String> e : byModuleName.entrySet() ) {
-            if ( e.getValue().equals( status ) ) {
-                sb.append( "<tr><td>" ).append( e.getKey() ).append( "</td></tr>" );
-            }
-        }
-
-        sb.append( "</table></fieldset>" );
-        return sb.toString();
+    @Override
+    protected Renderer getSiteRenderer() {
+        return siteRenderer;
     }
 
-    private String generateAlphabeticalTable( SortedMap<String, String> byModuleName ) {
-        StringBuilder sb = new StringBuilder();
-        sb.append( "<fieldset style='display: inline-block;'>" );
-        sb.append( "<legend>Status by module name</legend>" );
-        sb.append( "<table>" );
-
-        for ( Entry<String, String> e : byModuleName.entrySet() ) {
-            sb.append( "<tr><td>" );
-            sb.append( e.getKey() );
-            sb.append( "</td><td bgcolor='" ).append( colorForStatus( e.getValue() ) ).append( "'>" );
-            sb.append( e.getValue() );
-            sb.append( "</td></tr>" );
-        }
-
-        sb.append( "</table></fieldset>" );
-        return sb.toString();
+    @Override
+    protected String getOutputDirectory() {
+        return outputDirectory;
     }
 
-    private String getModuleStatus( MavenProject p ) {
-        Properties props = p.getModel().getProperties();
-        String st = props.getProperty( "deegree.module.status" );
-        if ( st == null ) {
-            return "not specified in pom";
-        }
-        return st;
+    @Override
+    protected MavenProject getProject() {
+        return project;
     }
 
-    private String colorForStatus( String status ) {
-        if ( status.equals( "ok" ) ) {
-            return "lightgreen";
-        }
-        if ( status.equals( "check" ) ) {
-            return "yellow";
-        }
-        if ( status.equals( "rework" ) ) {
-            return "red";
-        }
-        return "lightgray";
+    @Override
+    protected void executeReport( Locale locale )
+                            throws MavenReportException {
+        ModuleListRenderer renderer = new ModuleListRenderer( project, getSink(), outputDirectory );
+        renderer.renderBody();
     }
 
 }
