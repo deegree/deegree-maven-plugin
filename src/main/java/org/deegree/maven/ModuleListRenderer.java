@@ -115,6 +115,9 @@ public class ModuleListRenderer extends AbstractMavenReportRenderer {
     }
 
     private void generateStatusTable( String status, SortedMap<String, String> byModuleName ) {
+        if ( !byModuleName.values().contains( status ) ) {
+            return;
+        }
         sink.table();
         sink.tableCaption();
         sink.text( "Modules with status " + status );
