@@ -71,7 +71,8 @@ public class ModuleListSiteMojo extends AbstractMojo {
     @Override
     public void execute()
                             throws MojoExecutionException, MojoFailureException {
-        File dir = new File( project.getBasedir(), "target" );
+        File dir = new File( project.getBasedir(), "target/site/" );
+        dir.mkdirs();
         List<MavenProject> modules = project.getCollectedProjects();
 
         SortedMap<String, String> byModuleName = new TreeMap<String, String>();
