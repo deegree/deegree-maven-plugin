@@ -36,8 +36,15 @@
 package org.deegree.maven;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -66,10 +73,108 @@ public class ModuleListSiteMojo extends AbstractMojo {
                             throws MojoExecutionException, MojoFailureException {
         File dir = new File( project.getBasedir(), "target" );
         List<MavenProject> modules = project.getCollectedProjects();
+
+        SortedMap<String, String> byModuleName = new TreeMap<String, String>();
+        HashSet<String> status = new HashSet<String>();
+
         for ( MavenProject p : modules ) {
-            // extract status from pom
+            if ( p.getPackaging().equals( "pom" ) ) {
+                continue;
+            }
+            String st = getModuleStatus( p );
+            status.add( st );
+            byModuleName.put( p.getArtifactId(), st );
         }
-        // produce aggregated file for inclusion in site
+
+        String html = generateHtml( byModuleName, status );
+        try {
+            FileUtils.write( new File( dir, "modulestatus.html" ), html );
+        } catch ( IOException e ) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private String generateHtml( SortedMap<String, String> byModuleName, HashSet<String> status ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append( "<html><body>" );
+
+        sb.append( generateAlphabeticalTable( byModuleName ) );
+        sb.append( generateStatusTables( byModuleName, status ) );
+
+        sb.append( "</body></html>\n" );
+        return sb.toString();
+    }
+
+    private String generateStatusTables( SortedMap<String, String> byModuleName, HashSet<String> status ) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append( generateStatusTable( "ok", byModuleName ) );
+        sb.append( generateStatusTable( "check", byModuleName ) );
+        sb.append( generateStatusTable( "rework", byModuleName ) );
+        for ( String s : status ) {
+            if ( !( s.equals( "ok" ) || s.equals( "check" ) || s.equals( "rework" ) ) ) {
+                sb.append( generateStatusTable( s, byModuleName ) );
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private String generateStatusTable( String status, SortedMap<String, String> byModuleName ) {
+        String color = colorForStatus( status );
+        StringBuilder sb = new StringBuilder();
+        sb.append( "<fieldset style='display: inline-block;'><legend>Modules with status " ).append( status ).append( "</legend>" );
+        sb.append( "<table bgcolor='" ).append( color ).append( "'>" );
+
+        for ( Entry<String, String> e : byModuleName.entrySet() ) {
+            if ( e.getValue().equals( status ) ) {
+                sb.append( "<tr><td>" ).append( e.getKey() ).append( "</td></tr>" );
+            }
+        }
+
+        sb.append( "</table></fieldset>" );
+        return sb.toString();
+    }
+
+    private String generateAlphabeticalTable( SortedMap<String, String> byModuleName ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append( "<fieldset style='display: inline-block;'>" );
+        sb.append( "<legend>Status by module name</legend>" );
+        sb.append( "<table>" );
+
+        for ( Entry<String, String> e : byModuleName.entrySet() ) {
+            sb.append( "<tr><td>" );
+            sb.append( e.getKey() );
+            sb.append( "</td><td bgcolor='" ).append( colorForStatus( e.getValue() ) ).append( "'>" );
+            sb.append( e.getValue() );
+            sb.append( "</td></tr>" );
+        }
+
+        sb.append( "</table></fieldset>" );
+        return sb.toString();
+    }
+
+    private String getModuleStatus( MavenProject p ) {
+        Properties props = p.getModel().getProperties();
+        String st = props.getProperty( "deegree.module.status" );
+        if ( st == null ) {
+            return "not specified in pom";
+        }
+        return st;
+    }
+
+    private String colorForStatus( String status ) {
+        if ( status.equals( "ok" ) ) {
+            return "lightgreen";
+        }
+        if ( status.equals( "check" ) ) {
+            return "yellow";
+        }
+        if ( status.equals( "rework" ) ) {
+            return "red";
+        }
+        return "lightgray";
     }
 
 }
