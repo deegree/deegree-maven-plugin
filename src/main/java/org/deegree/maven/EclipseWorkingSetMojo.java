@@ -36,6 +36,7 @@
 package org.deegree.maven;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +51,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -104,10 +107,13 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
             File workingsets = new File( eclipseWorkspace,
                                          ".metadata/.plugins/org.eclipse.ui.workbench/workingsets.xml" );
             File workbench = new File( eclipseWorkspace, ".metadata/.plugins/org.eclipse.ui.workbench/workbench.xml" );
+            File xmi = new File(eclipseWorkspace, ".metadata/.plugins/org.eclipse.e4.workbench/workbench.xmi");
+            
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document wsDoc = dBuilder.parse( workingsets );
             Document wbDoc = dBuilder.parse( workbench );
+            Document xmiDoc = dBuilder.parse(xmi);
 
             for ( Entry<String, String> e : moduleToWorkingSet.entrySet() ) {
                 String mod = e.getKey();
@@ -118,6 +124,7 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
                 item.setAttribute( "elementID", "=" + mod );
                 item.setAttribute( "factoryID", "org.eclipse.jdt.ui.PersistableJavaElementFactory" );
                 updateWorkbenchDocument( wbDoc, ws );
+                updateXmiDocument(xmiDoc);
             }
 
             TransformerFactory fac = TransformerFactory.newInstance();
@@ -129,6 +136,24 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
         }
     }
 
+    private void updateXmiDocument(Document doc){
+        NodeList nl = doc.getElementsByTagName("sharedElements" );
+        for(int i = 0; i < nl.getLength();++i){
+            Element e = (Element) nl.item(i );
+            if(e.getAttribute("elementId" ).equals("org.eclipse.jdt.ui.PackageExplorer")){
+                nl = e.getElementsByTagName("persistedState" );
+                e = (Element) nl.item(0 );
+                try {
+                    FileUtils.write(new File("/tmp/test.xml"), e.getAttribute("value" ) );
+                } catch ( IOException e1 ) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+                return;
+            }
+        }
+    }
+    
     private void updateWorkbenchDocument( Document doc, String workingSet ) {
         maybeAppend( doc, "activeWorkingSet", workingSet );
         maybeAppend( doc, "allWorkingSets", workingSet );
