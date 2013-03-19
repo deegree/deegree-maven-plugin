@@ -35,9 +35,12 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,13 +49,14 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -61,6 +65,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * Mojo to automatically setup deegree working sets and to move projects into working sets.
@@ -107,13 +112,18 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
             File workingsets = new File( eclipseWorkspace,
                                          ".metadata/.plugins/org.eclipse.ui.workbench/workingsets.xml" );
             File workbench = new File( eclipseWorkspace, ".metadata/.plugins/org.eclipse.ui.workbench/workbench.xml" );
-            File xmi = new File(eclipseWorkspace, ".metadata/.plugins/org.eclipse.e4.workbench/workbench.xmi");
-            
+            File xmi = new File( eclipseWorkspace, ".metadata/.plugins/org.eclipse.e4.workbench/workbench.xmi" );
+            File dialog = new File( eclipseWorkspace, ".metadata/.plugins/org.eclipse.jdt.ui/dialog_settings.xml" );
+
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document wsDoc = dBuilder.parse( workingsets );
-            Document wbDoc = dBuilder.parse( workbench );
-            Document xmiDoc = dBuilder.parse(xmi);
+            Document wbDoc = null;
+            if ( workbench.exists() ) {
+                wbDoc = dBuilder.parse( workbench );
+            }
+            Document xmiDoc = dBuilder.parse( xmi );
+            Document dialogDoc = dBuilder.parse( dialog );
 
             for ( Entry<String, String> e : moduleToWorkingSet.entrySet() ) {
                 String mod = e.getKey();
@@ -123,37 +133,125 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
                 elem.appendChild( item );
                 item.setAttribute( "elementID", "=" + mod );
                 item.setAttribute( "factoryID", "org.eclipse.jdt.ui.PersistableJavaElementFactory" );
-                updateWorkbenchDocument( wbDoc, ws );
-                updateXmiDocument(xmiDoc);
+                if ( workbench.exists() ) {
+                    updateWorkbenchDocument( wbDoc, ws );
+                }
+                updateXmiDocument( xmiDoc, ws );
+                updateDialogDocument( dialogDoc, ws );
             }
 
             TransformerFactory fac = TransformerFactory.newInstance();
             Transformer trans = fac.newTransformer();
             trans.transform( new DOMSource( wsDoc ), new StreamResult( workingsets ) );
-            trans.transform( new DOMSource( wbDoc ), new StreamResult( workbench ) );
+            if ( workbench.exists() ) {
+                trans.transform( new DOMSource( wbDoc ), new StreamResult( workbench ) );
+            }
+            trans.transform( new DOMSource( xmiDoc ), new StreamResult( xmi ) );
+            trans.transform( new DOMSource( dialogDoc ), new StreamResult( dialog ) );
         } catch ( Exception e ) {
-            getLog().error( "Unable to read eclipse workingsets file: " + e.getLocalizedMessage(), e );
+            getLog().error( "Unable to update eclipse configuration files: " + e.getLocalizedMessage(), e );
+            throw new MojoFailureException( e.getLocalizedMessage(), e );
         }
     }
 
-    private void updateXmiDocument(Document doc){
-        NodeList nl = doc.getElementsByTagName("sharedElements" );
-        for(int i = 0; i < nl.getLength();++i){
-            Element e = (Element) nl.item(i );
-            if(e.getAttribute("elementId" ).equals("org.eclipse.jdt.ui.PackageExplorer")){
-                nl = e.getElementsByTagName("persistedState" );
-                e = (Element) nl.item(0 );
-                try {
-                    FileUtils.write(new File("/tmp/test.xml"), e.getAttribute("value" ) );
-                } catch ( IOException e1 ) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
+    private void updateDialogDocument( Document doc, String workingSet )
+                            throws IOException, SAXException, TransformerException, ParserConfigurationException {
+        NodeList nl = doc.getElementsByTagName( "section" );
+        for ( int i = 0; i < nl.getLength(); ++i ) {
+            Element e = (Element) nl.item( i );
+            if ( e.getAttribute( "name" ).equals( "org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart" ) ) {
+                nl = doc.getElementsByTagName( "item" );
+                for ( int j = 0; j < nl.getLength(); ++j ) {
+                    e = (Element) nl.item( j );
+                    if ( e.getAttribute( "key" ).equals( "memento" ) ) {
+                        byte[] bs = e.getAttribute( "value" ).getBytes();
+                        FileUtils.writeByteArrayToFile( new File( "/tmp/test2.xml" ), bs );
+
+                        ByteArrayInputStream in = new ByteArrayInputStream( bs );
+
+                        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                        Document wbDoc = dBuilder.parse( in );
+
+                        updateWorkbenchDocument( wbDoc, workingSet );
+
+                        TransformerFactory fac = TransformerFactory.newInstance();
+                        Transformer trans = fac.newTransformer();
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        trans.transform( new DOMSource( wbDoc ), new StreamResult( bos ) );
+
+                        bos.close();
+                        bs = bos.toByteArray();
+                        e.setAttribute( "value", new String( bs ) );
+                    }
                 }
-                return;
             }
         }
     }
-    
+
+    private void updateXmiDocument( Document doc, String workingSet )
+                            throws ParserConfigurationException, SAXException, IOException, TransformerException {
+        // XML documents in an XML attribute, that's really great
+        NodeList nl = doc.getElementsByTagName( "sharedElements" );
+        for ( int i = 0; i < nl.getLength(); ++i ) {
+            Element e = (Element) nl.item( i );
+            if ( e.getAttribute( "elementId" ).equals( "org.eclipse.jdt.ui.PackageExplorer" ) ) {
+                NodeList nl2 = e.getElementsByTagName( "persistedState" );
+                Element val = (Element) nl2.item( 0 );
+                byte[] bs = val.getAttribute( "value" ).getBytes();
+
+                ByteArrayInputStream in = new ByteArrayInputStream( bs );
+
+                DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                Document wbDoc = dBuilder.parse( in );
+
+                updateWorkbenchDocument( wbDoc, workingSet );
+
+                TransformerFactory fac = TransformerFactory.newInstance();
+                Transformer trans = fac.newTransformer();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                trans.transform( new DOMSource( wbDoc ), new StreamResult( bos ) );
+
+                bos.close();
+                bs = bos.toByteArray();
+                val.setAttribute( "value", new String( bs ) );
+            }
+            if ( e.getAttribute( "elementID" ).equals( "org.eclipse.ui.navigator.PackageExplorer" ) ) {
+                NodeList nl2 = e.getElementsByTagName( "persistedState" );
+                Element val = (Element) nl2.item( 0 );
+                byte[] bs = val.getAttribute( "value" ).getBytes();
+
+                ByteArrayInputStream in = new ByteArrayInputStream( bs );
+
+                DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                Document wbDoc = dBuilder.parse( in );
+
+                updateWorkingSetListDocument( wbDoc, workingSet );
+
+                TransformerFactory fac = TransformerFactory.newInstance();
+                Transformer trans = fac.newTransformer();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                trans.transform( new DOMSource( wbDoc ), new StreamResult( bos ) );
+
+                bos.close();
+                bs = bos.toByteArray();
+                val.setAttribute( "value", new String( bs ) );
+            }
+        }
+    }
+
+    private void updateWorkingSetListDocument( Document doc, String workingSet ) {
+        Element e = doc.getDocumentElement();
+        String list = e.getAttribute( "currentWorkingSetName" );
+        String[] wss = list.split( ":" );
+        List<String> workingsets = new ArrayList<String>( Arrays.asList( wss ) );
+        if ( !workingsets.contains( workingSet ) ) {
+            e.setAttribute( "currentWorkingSetName", list + ":" + workingSet );
+        }
+    }
+
     private void updateWorkbenchDocument( Document doc, String workingSet ) {
         maybeAppend( doc, "activeWorkingSet", workingSet );
         maybeAppend( doc, "allWorkingSets", workingSet );
@@ -168,10 +266,14 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
                 return;
             }
         }
-        Element e = lastElem.getOwnerDocument().createElement( elemName );
+        Element e = doc.createElement( elemName );
         e.setAttribute( "workingSetName", workingSet );
-        Node n = lastElem.getNextSibling();
-        lastElem.getParentNode().insertBefore( e, n );
+        if ( lastElem == null ) {
+            doc.getDocumentElement().appendChild( e );
+        } else {
+            Node n = lastElem.getNextSibling();
+            lastElem.getParentNode().insertBefore( e, n );
+        }
     }
 
     private Element getWorkingSetElement( Document doc, String workingSet ) {
