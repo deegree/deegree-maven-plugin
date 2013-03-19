@@ -56,6 +56,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
@@ -102,26 +103,50 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
             Map<String, String> moduleToWorkingSet = findModules();
             File workingsets = new File( eclipseWorkspace,
                                          ".metadata/.plugins/org.eclipse.ui.workbench/workingsets.xml" );
+            File workbench = new File( eclipseWorkspace, ".metadata/.plugins/org.eclipse.ui.workbench/workbench.xml" );
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse( workingsets );
+            Document wsDoc = dBuilder.parse( workingsets );
+            Document wbDoc = dBuilder.parse( workbench );
 
             for ( Entry<String, String> e : moduleToWorkingSet.entrySet() ) {
                 String mod = e.getKey();
                 String ws = prefix + e.getValue();
-                Element elem = getWorkingSetElement( doc, ws );
-                Element item = doc.createElement( "item" );
+                Element elem = getWorkingSetElement( wsDoc, ws );
+                Element item = wsDoc.createElement( "item" );
                 elem.appendChild( item );
                 item.setAttribute( "elementID", "=" + mod );
                 item.setAttribute( "factoryID", "org.eclipse.jdt.ui.PersistableJavaElementFactory" );
+                updateWorkbenchDocument( wbDoc, ws );
             }
 
             TransformerFactory fac = TransformerFactory.newInstance();
             Transformer trans = fac.newTransformer();
-            trans.transform( new DOMSource( doc ), new StreamResult( workingsets ) );
+            trans.transform( new DOMSource( wsDoc ), new StreamResult( workingsets ) );
+            trans.transform( new DOMSource( wbDoc ), new StreamResult( workbench ) );
         } catch ( Exception e ) {
             getLog().error( "Unable to read eclipse workingsets file: " + e.getLocalizedMessage(), e );
         }
+    }
+
+    private void updateWorkbenchDocument( Document doc, String workingSet ) {
+        maybeAppend( doc, "activeWorkingSet", workingSet );
+        maybeAppend( doc, "allWorkingSets", workingSet );
+    }
+
+    private void maybeAppend( Document doc, String elemName, String workingSet ) {
+        NodeList nl = doc.getElementsByTagName( elemName );
+        Element lastElem = null;
+        for ( int i = 0; i < nl.getLength(); ++i ) {
+            lastElem = (Element) nl.item( i );
+            if ( lastElem.getAttribute( "workingSetName" ).equals( workingSet ) ) {
+                return;
+            }
+        }
+        Element e = lastElem.getOwnerDocument().createElement( elemName );
+        e.setAttribute( "workingSetName", workingSet );
+        Node n = lastElem.getNextSibling();
+        lastElem.getParentNode().insertBefore( e, n );
     }
 
     private Element getWorkingSetElement( Document doc, String workingSet ) {
