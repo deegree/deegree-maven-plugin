@@ -56,7 +56,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -165,7 +164,6 @@ public class EclipseWorkingSetMojo extends AbstractMojo {
                     e = (Element) nl.item( j );
                     if ( e.getAttribute( "key" ).equals( "memento" ) ) {
                         byte[] bs = e.getAttribute( "value" ).getBytes();
-                        FileUtils.writeByteArrayToFile( new File( "/tmp/test2.xml" ), bs );
 
                         ByteArrayInputStream in = new ByteArrayInputStream( bs );
 
