@@ -109,6 +109,7 @@ public class PortnumberMojo extends AbstractMojo {
             getLog().info( "Using portnumber " + port + " for this run." );
 
             project.getProperties().put( "portnumber", "" + port );
+            project.getProperties().put( "previousportnumber", "" + ( port - 1 ) );
 
             FileOutputStream fos = new FileOutputStream( portfile );
             out = new PrintStream( fos, true, "UTF-8" );
