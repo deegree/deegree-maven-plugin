@@ -102,6 +102,12 @@ public class WorkspaceMojo extends AbstractMojo {
      * @parameter expression="${localRepository}"
      */
     private ArtifactRepository localRepository;
+    
+    /**
+     * 
+     * @parameter default-value="false"
+     */
+    private boolean transitiveJarDependencies;
 
 
     @Override
@@ -120,7 +126,7 @@ public class WorkspaceMojo extends AbstractMojo {
             reverse( workspaces );
 
             Set<?> jarDeps = getDependencyArtifacts( project, artifactResolver, artifactFactory, metadataSource,
-                                                     localRepository, "jar", false );
+                                                     localRepository, "jar", transitiveJarDependencies );
 
             File target = new File( project.getBasedir(), "target" );
             if ( !target.exists() && !target.mkdirs() ) {
