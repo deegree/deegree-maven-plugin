@@ -47,63 +47,46 @@ import java.io.PrintStream;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 import org.reflections.Reflections;
 import org.reflections.serializers.Serializer;
 
 import com.google.common.base.Predicate;
 
 /**
- * @goal generate-jaxb-catalog
- * @phase generate-resources
- * 
+ *
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: aschmitz $
  * 
  * @version $Revision: 31419 $, $Date: 2011-08-02 17:42:17 +0200 (Tue, 02 Aug 2011) $
  */
+@Execute(goal = "generate-jaxb-catalog", phase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "generate-jaxb-catalog")
 public class XMLCatalogueMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactFactory artifactFactory;
+    @Component
+    private RepositorySystem repositorySystem;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * 
-     * @parameter expression="${localRepository}"
-     */
+    @Parameter(name = "localRepository")
     private ArtifactRepository localRepository;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
         File target = new File( project.getBasedir(), "target" );
         target.mkdirs();
         target = new File( target, "deegree.xmlcatalog" );
@@ -113,7 +96,7 @@ public class XMLCatalogueMojo extends AbstractMojo {
             catalogOut = new PrintStream( new FileOutputStream( target ), true, "UTF-8" );
             final PrintStream catalog = catalogOut;
 
-            addDependenciesToClasspath( project, artifactResolver, artifactFactory, metadataSource, localRepository );
+            addDependenciesToClasspath( project, artifactResolver, repositorySystem, localRepository );
 
             final XMLInputFactory fac = XMLInputFactory.newInstance();
             final Reflections r = new Reflections( "/META-INF/schemas/" );

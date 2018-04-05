@@ -37,40 +37,32 @@ package org.deegree.maven;
 
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.channels.FileLock;
 
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 /**
- * @goal generate-portnumber
- * @phase initialize
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "generate-portnumber", phase = LifecyclePhase.INITIALIZE)
+@Mojo(name = "generate-portnumber")
 public class PortnumberMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     @Override
-    public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+    public void execute() {
         PrintStream out = null;
         BufferedReader reader = null;
         FileLock lock = null;

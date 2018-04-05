@@ -53,31 +53,32 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.deegree.maven.ithelper.ServiceIntegrationTestHelper;
 import org.deegree.maven.utils.HttpUtils;
 
 /**
- * @goal test-workspaces
- * @phase integration-test
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "test-workspaces", phase = LifecyclePhase.INTEGRATION_TEST)
+@Mojo(name = "test-workspaces")
 public class WorkspaceITMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
         Set<?> artifacts = project.getDependencyArtifacts();
         Set<Artifact> workspaces = new HashSet<Artifact>();
         for ( Object o : artifacts ) {

@@ -38,42 +38,36 @@ package org.deegree.maven;
 import java.util.Locale;
 
 import org.apache.maven.doxia.siterenderer.Renderer;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
 
 /**
- * @goal generate-modules-site
- * @aggregator
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * @phase site
  * 
  * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep 2011) $
  */
+@Execute(goal = "generate-modules-site")
+@Mojo(name = "generate-modules-site", aggregator = true)
 public class ModuleListSiteMojo extends AbstractMavenReport {
 
     /**
      * Directory where reports will go.
-     * 
-     * @parameter expression="${project.reporting.outputDirectory}"
-     * @required  * @readonly  
      */
+    @Parameter(property = "project.reporting.outputDirectory", readonly = true, required = true)
     private String outputDirectory;
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     * @required
-     * @readonly
-     */
+    @Component
     private Renderer siteRenderer;
 
     @Override

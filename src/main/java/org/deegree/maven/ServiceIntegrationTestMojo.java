@@ -40,50 +40,43 @@ import java.io.File;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.deegree.maven.ithelper.ServiceIntegrationTestHelper;
 
 /**
- * @goal test-services
- * @phase integration-test
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "test-services", phase = LifecyclePhase.INTEGRATION_TEST)
+@Mojo(name = "test-services")
 public class ServiceIntegrationTestMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
-    /**
-     * @parameter default-value="true"
-     */
+    @Parameter(defaultValue = "true")
     private boolean testCapabilities;
 
-    /**
-     * @parameter default-value="true"
-     */
+    @Parameter(defaultValue = "true")
     private boolean testLayers;
 
-    /**
-     * @parameter default-value="true"
-     */
+    @Parameter(defaultValue = "true")
     private boolean testRequests;
 
-    /**
-     * @parameter default-value="${project.basedir}/src/main/webapp/WEB-INF/workspace"
-     */
+    @Parameter(defaultValue = "${project.basedir}/src/main/webapp/WEB-INF/workspace")
     private File workspace;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
         try {
             if ( !workspace.exists() ) {
                 workspace = new File( project.getBasedir(), "src/main/webapp/WEB-INF/conf" );
@@ -91,7 +84,8 @@ public class ServiceIntegrationTestMojo extends AbstractMojo {
                     getLog().error( "Could not find a workspace to operate on." );
                     throw new MojoFailureException( "Could not find a workspace to operate on." );
                 }
-                getLog().warn( "Default/configured workspace did not exist, using existing " + workspace + " instead." );
+                getLog().warn( "Default/configured workspace did not exist, using existing " + workspace
+                               + " instead." );
             }
 
             ServiceIntegrationTestHelper helper = new ServiceIntegrationTestHelper( project, getLog() );

@@ -42,67 +42,50 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 import org.reflections.Reflections;
 import org.reflections.serializers.Serializer;
 
 import com.google.common.base.Predicate;
 
 /**
- * @goal assemble-console
- * @phase generate-resources
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "assemble-console", phase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "assemble-console")
 public class ConsoleMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactFactory artifactFactory;
+    @Component
+    private RepositorySystem repositorySystem;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * 
-     * @parameter expression="${localRepository}"
-     */
+    @Parameter(property = "localRepository")
     private ArtifactRepository localRepository;
 
     String input;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
 
-        addDependenciesToClasspath( project, artifactResolver, artifactFactory, metadataSource, localRepository );
+        addDependenciesToClasspath( project, artifactResolver, repositorySystem, localRepository );
 
         final File dir = new File( project.getBasedir(), "src/main/webapp/console" );
         if ( !dir.isDirectory() && !dir.mkdirs() ) {

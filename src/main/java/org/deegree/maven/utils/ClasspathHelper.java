@@ -35,11 +35,15 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven.utils;
 
-import static java.lang.Thread.currentThread;
-import static java.security.AccessController.doPrivileged;
-import static java.util.Collections.EMPTY_LIST;
-import static java.util.Collections.EMPTY_MAP;
-import static org.apache.maven.project.artifact.MavenMetadataSource.createArtifacts;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -48,19 +52,10 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.artifact.InvalidDependencyVersionException;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
 
 /**
  * 
@@ -74,38 +69,32 @@ public class ClasspathHelper {
     /**
      * @param project
      * @param artifactResolver
-     * @param artifactFactory
-     * @param metadataSource
+     * @param repositorySystem
      * @param localRepository
      * @param type
      * @return a list of all (possibly transitive) artifacts of the given type
-     * @throws InvalidDependencyVersionException
-     * @throws ArtifactResolutionException
-     * @throws ArtifactNotFoundException
      */
     public static Set<?> getDependencyArtifacts( MavenProject project, ArtifactResolver artifactResolver,
-                                                 ArtifactFactory artifactFactory,
-                                                 ArtifactMetadataSource metadataSource,
+                                                 final RepositorySystem repositorySystem,
                                                  ArtifactRepository localRepository, final String type,
-                                                 boolean transitively )
-                            throws InvalidDependencyVersionException, ArtifactResolutionException,
-                            ArtifactNotFoundException {
+                                                 boolean transitively ) {
 
-        List<?> dependencies = project.getDependencies();
-
-        Set<Artifact> dependencyArtifacts = createArtifacts( artifactFactory, dependencies, null, new ArtifactFilter() {
-            @Override
-            public boolean include( Artifact artifact ) {
-                return artifact != null && artifact.getType() != null && artifact.getType().equals( type );
-            }
-        }, null );
+        List<Dependency> dependencies = project.getDependencies();
+        Set<Artifact> artifacts = dependencies.parallelStream()
+                .filter((Dependency dep) -> dep.getType().equals(type))
+                .map(
+                    (Dependency dep) -> repositorySystem.createArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), dep.getScope(), dep.getType()))
+                .collect(Collectors.toSet());
 
         ArtifactResolutionResult result;
         Artifact mainArtifact = project.getArtifact();
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest();
+        request.setArtifact(mainArtifact);
+        request.setArtifactDependencies(artifacts);
+        request.setLocalRepository(localRepository);
+        request.setRemoteRepositories(project.getRemoteArtifactRepositories());
 
-        result = artifactResolver.resolveTransitively( dependencyArtifacts, mainArtifact, EMPTY_MAP, localRepository,
-                                                       project.getRemoteArtifactRepositories(), metadataSource, null,
-                                                       EMPTY_LIST );
+        result = artifactResolver.resolve(request);
 
         if ( transitively ) {
             return result.getArtifacts();
@@ -115,40 +104,43 @@ public class ClasspathHelper {
         if ( mainArtifact.getType() != null && mainArtifact.getType().equals( type ) ) {
             set.add( mainArtifact );
         }
-        set.addAll( dependencyArtifacts );
+        set.addAll( artifacts );
 
         return set;
     }
 
     private static Set<?> resolveDeps( MavenProject project, ArtifactResolver artifactResolver,
-                                       ArtifactFactory artifactFactory, ArtifactMetadataSource metadataSource,
-                                       ArtifactRepository localRepository )
-                            throws InvalidDependencyVersionException, ArtifactResolutionException,
-                            ArtifactNotFoundException {
+                                       final RepositorySystem repositorySystem,
+                                       ArtifactRepository localRepository ) {
 
-        List<?> dependencies = project.getDependencies();
+        List<Dependency> dependencies = project.getDependencies();
 
-        Set<Artifact> dependencyArtifacts = createArtifacts( artifactFactory, dependencies, null, null, null );
+        Set<Artifact> artifacts = dependencies.parallelStream()
+                .map(
+                        (Dependency dep) -> repositorySystem.createArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), dep.getScope(), dep.getType()))
+                .collect(Collectors.toSet());
 
-        dependencyArtifacts.add( project.getArtifact() );
+        artifacts.add( project.getArtifact() );
 
-        ArtifactResolutionResult result = artifactResolver.resolveTransitively( dependencyArtifacts,
-                                                                                project.getArtifact(),
-                                                                                EMPTY_MAP,
-                                                                                localRepository,
-                                                                                project.getRemoteArtifactRepositories(),
-                                                                                metadataSource, null, EMPTY_LIST );
+        Artifact mainArtifact = project.getArtifact();
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest();
+        request.setArtifact(mainArtifact);
+        request.setArtifactDependencies(artifacts);
+        request.setLocalRepository(localRepository);
+        request.setRemoteRepositories(project.getRemoteArtifactRepositories());
+        request.setResolveTransitively(true);
+
+        ArtifactResolutionResult result = artifactResolver.resolve( request );
 
         return result.getArtifacts();
     }
 
     public static void addDependenciesToClasspath( MavenProject project, ArtifactResolver artifactResolver,
-                                                   ArtifactFactory artifactFactory,
-                                                   ArtifactMetadataSource metadataSource,
+                                                   final RepositorySystem repositorySystem,
                                                    ArtifactRepository localRepository )
                             throws MojoExecutionException {
         try {
-            Set<?> artifacts = resolveDeps( project, artifactResolver, artifactFactory, metadataSource, localRepository );
+            Set<?> artifacts = resolveDeps( project, artifactResolver, repositorySystem, localRepository );
             final URL[] urls = new URL[artifacts.size()];
             Iterator<?> itor = artifacts.iterator();
             int i = 0;

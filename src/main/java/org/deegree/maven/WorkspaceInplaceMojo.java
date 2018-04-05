@@ -46,79 +46,56 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.artifact.InvalidDependencyVersionException;
+import org.apache.maven.repository.RepositorySystem;
 
 /**
- * @goal workspace-inplace
- * @phase generate-resources
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "workspace-inplace", phase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "workspace-inplace")
 public class WorkspaceInplaceMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactFactory artifactFactory;
+    @Component
+    private RepositorySystem repositorySystem;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * 
-     * @parameter expression="${localRepository}"
-     */
+    @Parameter(name = "localRepository")
     private ArtifactRepository localRepository;
 
     /**
      * If set to true, all existing files will be overwritten if contained in a dependency.
-     * 
-     * @parameter default-value="false"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "false", required = true, readonly = true)
     private boolean overwrite;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
         Log log = getLog();
 
         File dir = determineWorkspaceDirectory();
 
         try {
-            Set<?> workspaces = getDependencyArtifacts( project, artifactResolver, artifactFactory, metadataSource,
-                                                        localRepository, "deegree-workspace", true );
+            Set<?> workspaces = getDependencyArtifacts( project, artifactResolver, repositorySystem, localRepository,
+                                                        "deegree-workspace", true );
 
             copyDependencies( log, dir );
 
@@ -132,12 +109,6 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
                     closeQuietly( in );
                 }
             }
-        } catch ( ArtifactResolutionException e ) {
-            throw new MojoFailureException( "Could not resolve artifact: " + e.getLocalizedMessage(), e );
-        } catch ( ArtifactNotFoundException e ) {
-            throw new MojoFailureException( "Could not find artifact: " + e.getLocalizedMessage(), e );
-        } catch ( InvalidDependencyVersionException e ) {
-            throw new MojoFailureException( "Invalid dependency version: " + e.getLocalizedMessage(), e );
         } catch ( IOException e ) {
             throw new MojoFailureException( "Could not extract workspace dependencies in place: "
                                             + e.getLocalizedMessage(), e );
@@ -146,10 +117,10 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
     }
 
     private void copyDependencies( Log log, File dir )
-                            throws MojoFailureException, IOException, ArtifactResolutionException,
-                            ArtifactNotFoundException, InvalidDependencyVersionException {
-        Set<?> jarDeps = getDependencyArtifacts( project, artifactResolver, artifactFactory, metadataSource,
-                                                 localRepository, "jar", false );
+                            throws MojoFailureException,
+                            IOException {
+        Set<?> jarDeps = getDependencyArtifacts( project, artifactResolver, repositorySystem, localRepository, "jar",
+                                                 false );
 
         File modules = new File( dir, "modules" );
         if ( !jarDeps.isEmpty() && !modules.isDirectory() && !modules.mkdirs() ) {
