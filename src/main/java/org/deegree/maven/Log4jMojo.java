@@ -118,7 +118,7 @@ public class Log4jMojo extends AbstractMojo {
         out.println();
     }
 
-    private void collect( final String type, String msg, final PrintWriter out ) {
+    private void collect( final String type, String msg, final PrintWriter out, final String version ) {
         block( msg, out );
 
         // seems to scan automatically without requesting something
@@ -144,7 +144,7 @@ public class Log4jMojo extends AbstractMojo {
 
             @Override
             public boolean acceptsInput( String file ) {
-                return file.equals( "META-INF.deegree.log4j." + type.toLowerCase() );
+                return file.equals( "META-INF.deegree.log4j-" + version + "." + type.toLowerCase() );
             }
 
             @Override
@@ -182,6 +182,7 @@ public class Log4jMojo extends AbstractMojo {
             getLog().info( "Skipping generation of log4j2.xml as it already exists in src/main/resources." );
             return;
         }
+        String version = project.getVersion();
 
         addDependenciesToClasspath( project, artifactResolver, repositorySystem, localRepository );
 
@@ -225,11 +226,11 @@ public class Log4jMojo extends AbstractMojo {
 
             o = out;
 
-            collect( "ERROR", "Severe error messages", out );
-            collect( "WARN", "Important warning messages", out );
-            collect( "INFO", "Informational messages", out );
-            collect( "DEBUG", "Debugging messages, useful for in-depth debugging of e.g. service setups", out );
-            collect( "TRACE", "Tracing messages, for developers only", out );
+            collect( "ERROR", "Severe error messages", out, version );
+            collect( "WARN", "Important warning messages", out, version );
+            collect( "INFO", "Informational messages", out, version );
+            collect( "DEBUG", "Debugging messages, useful for in-depth debugging of e.g. service setups", out, version );
+            collect( "TRACE", "Tracing messages, for developers only", out, version );
 
             out.println( "    <AsyncRoot level=\"" + rootLoggingLevel + "\">" );
             out.println( "      <AppenderRef ref=\"stdout\" />" );
