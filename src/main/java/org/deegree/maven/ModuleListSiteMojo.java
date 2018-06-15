@@ -35,27 +35,23 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven;
 
-import java.util.Locale;
-
 import org.apache.maven.doxia.siterenderer.Renderer;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Execute;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
+
+import java.util.Locale;
 
 /**
  *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
- * @phase site
- * 
+ *
  * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep 2011) $
  */
 @Execute(goal = "generate-modules-site")
-@Mojo(name = "generate-modules-site", aggregator = true)
+@Mojo(defaultPhase = LifecyclePhase.SITE, name = "generate-modules-site", aggregator = true)
 public class ModuleListSiteMojo extends AbstractMavenReport {
 
     /**

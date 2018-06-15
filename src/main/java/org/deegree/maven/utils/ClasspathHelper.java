@@ -67,11 +67,6 @@ import static java.security.AccessController.doPrivileged;
 public class ClasspathHelper {
 
     /**
-     * @param project
-     * @param artifactResolver
-     * @param repositorySystem
-     * @param localRepository
-     * @param type
      * @return a list of all (possibly transitive) artifacts of the given type
      */
     public static Set<?> getDependencyArtifacts( MavenProject project, ArtifactResolver artifactResolver,
