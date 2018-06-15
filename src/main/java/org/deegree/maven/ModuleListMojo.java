@@ -35,39 +35,35 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 /**
- * @goal list-modules-wiki
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date: 2011-09-13 15:43:38 +0200 (Di, 13. Sep 2011) $
  */
+@Execute(goal = "list-modules-wiki")
+@Mojo(name = "list-modules-wiki")
 public class ModuleListMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
 
         FileOutputStream fos = null;
         try {

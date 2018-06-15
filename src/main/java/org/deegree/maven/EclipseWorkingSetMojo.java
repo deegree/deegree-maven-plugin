@@ -39,12 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -59,6 +54,9 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,22 +67,16 @@ import org.xml.sax.SAXException;
 /**
  * Mojo to automatically setup deegree working sets and to move projects into working sets.
  * 
- * @goal setup-eclipse-working-sets
- * @aggregator
- * @requiresDirectInvocation
- * 
  * @author <a href="mailto:schmitz@occamlabs.de">Andreas Schmitz</a>
  * @author last edited by: $Author: stranger $
  * 
  * @version $Revision: $, $Date: $
  */
+@Execute(goal = "setup-eclipse-working-sets")
+@Mojo(name = "setup-eclipse-working-sets", aggregator = true, requiresDirectInvocation = true)
 public class EclipseWorkingSetMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     private int counter = 0;

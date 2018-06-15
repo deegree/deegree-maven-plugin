@@ -49,84 +49,65 @@ import java.util.Set;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.artifact.AttachedArtifact;
+import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.repository.RepositorySystem;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.deegree.maven.utils.ZipUtils;
 
 /**
- * @goal attach-workspace
- * @phase package
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "attach-workspace", phase = LifecyclePhase.PACKAGE)
+@Mojo(name = "attach-workspace")
 public class WorkspaceMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
+    @Requirement
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactFactory artifactFactory;
+    @Component
+    private RepositorySystem repositorySystem;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * 
-     * @parameter expression="${localRepository}"
-     */
+    @Parameter(property = "localRepository")
     private ArtifactRepository localRepository;
-    
-    /**
-     * 
-     * @parameter default-value="false"
-     */
-    private boolean transitiveJarDependencies;
 
+    @Component
+    private MavenProjectHelper projectHelper;
+
+    @Parameter(defaultValue = "false")
+    private boolean transitiveJarDependencies;
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoFailureException {
         Log log = getLog();
         File dir = determineWorkspaceDirectory();
         ZipOutputStream out = null;
         try {
-            Set<?> artifacts = getDependencyArtifacts( project, artifactResolver, artifactFactory, metadataSource,
-                                                       localRepository, "deegree-workspace", true );
-            List<Artifact> workspaces = new ArrayList<Artifact>();
+            Set<?> artifacts = getDependencyArtifacts( project, artifactResolver, repositorySystem, localRepository,
+                                                       "deegree-workspace", true );
+            List<Artifact> workspaces = new ArrayList<>();
             for ( Object o : artifacts ) {
                 workspaces.add( (Artifact) o );
             }
             reverse( workspaces );
 
-            Set<?> jarDeps = getDependencyArtifacts( project, artifactResolver, artifactFactory, metadataSource,
-                                                     localRepository, "jar", transitiveJarDependencies );
+            Set<?> jarDeps = getDependencyArtifacts( project, artifactResolver, repositorySystem, localRepository,
+                                                     "jar", transitiveJarDependencies );
 
             File target = new File( project.getBasedir(), "target" );
             if ( !target.exists() && !target.mkdirs() ) {
@@ -137,7 +118,7 @@ public class WorkspaceMojo extends AbstractMojo {
             OutputStream os = new FileOutputStream( workspaceFile );
             out = new ZipOutputStream( os );
 
-            HashSet<String> visitedFiles = new HashSet<String>();
+            HashSet<String> visitedFiles = new HashSet<>();
             ZipUtils.zip( dir, out, dir.getAbsoluteFile().toURI(), visitedFiles );
 
             ZipUtils.zipModules( jarDeps, visitedFiles, out );
@@ -158,13 +139,13 @@ public class WorkspaceMojo extends AbstractMojo {
         log.info( "Attaching " + workspaceFile );
         Artifact artifact = project.getArtifact();
         if ( artifact.getType() == null || !artifact.getType().equals( "deegree-workspace" ) ) {
-            DefaultArtifactHandler defHandler = new DefaultArtifactHandler( "deegree-workspace" );
-            artifact = new AttachedArtifact( project.getArtifact(), "deegree-workspace", defHandler );
+            projectHelper.attachArtifact( project, "deegreeworkspace", workspaceFile );
         }
 
         artifact.setFile( workspaceFile );
         artifact.setResolved( true );
-        if ( project.getArtifact().getType() == null || !project.getArtifact().getType().equals( "deegree-workspace" ) ) {
+        if ( project.getArtifact().getType() == null
+             || !project.getArtifact().getType().equals( "deegree-workspace" ) ) {
             project.addAttachedArtifact( artifact );
         }
     }
@@ -179,6 +160,5 @@ public class WorkspaceMojo extends AbstractMojo {
         }
         return dir;
     }
-
 
 }

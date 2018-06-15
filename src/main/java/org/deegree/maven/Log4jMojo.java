@@ -36,99 +36,72 @@
 package org.deegree.maven;
 
 import static org.apache.commons.io.IOUtils.closeQuietly;
-import static org.apache.commons.io.IOUtils.copy;
+import static org.apache.log4j.LogManager.getLogger;
 import static org.deegree.maven.utils.ClasspathHelper.addDependenciesToClasspath;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.log4j.Logger;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
+import org.reflections.Configuration;
 import org.reflections.Reflections;
-import org.reflections.serializers.Serializer;
+import org.reflections.scanners.AbstractScanner;
+import org.reflections.scanners.Scanner;
+import org.reflections.vfs.Vfs;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Multimap;
 
 /**
- * @goal assemble-log4j
- * @phase generate-resources
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
- * 
+ *
  * @version $Revision$, $Date$
  */
+@Execute(goal = "assemble-log4j", phase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "assemble-log4j")
 public class Log4jMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="120"
-     * @required
-     */
+    private static Logger LOG = getLogger( Log4jMojo.class );
+
+    @Parameter(defaultValue = "120", required = true)
     private int width;
 
-    /**
-     * @parameter default-value="INFO"
-     * @required
-     */
+    @Parameter(defaultValue = "INFO", required = true)
     private String deegreeLoggingLevel;
 
-    /**
-     * @parameter default-value="ERROR"
-     * @required
-     */
+    @Parameter(defaultValue = "ERROR", required = true)
     private String rootLoggingLevel;
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @component
-     */
+    @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactFactory artifactFactory;
+    @Component
+    private RepositorySystem repositorySystem;
 
-    /**
-     * 
-     * @component
-     */
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * 
-     * @parameter expression="${localRepository}"
-     */
+    @Parameter(property = "localRepository")
     private ArtifactRepository localRepository;
 
     private void block( String text, PrintWriter out ) {
-        out.print( "# " );
+        out.print( "<!-- " );
         for ( int i = 0; i < width - 2; ++i ) {
             out.print( "=" );
         }
-        out.println();
+        out.println( " -->" );
         int odd = text.length() % 2;
         int len = ( width - text.length() - 4 ) / 2;
-        out.print( "# " );
+        out.print( "<!-- " );
         for ( int i = 0; i < len; ++i ) {
             out.print( "=" );
         }
@@ -136,104 +109,136 @@ public class Log4jMojo extends AbstractMojo {
         for ( int i = 0; i < len + odd; ++i ) {
             out.print( "=" );
         }
-        out.println();
-        out.print( "# " );
+        out.println( " -->" );
+        out.print( "<!-- " );
         for ( int i = 0; i < width - 2; ++i ) {
             out.print( "=" );
         }
-        out.println();
+        out.println( " -->" );
         out.println();
     }
 
-    private void collect( final Reflections r, final String type, String msg, final PrintWriter out ) {
+    private void collect( final String type, String msg, final PrintWriter out, final String version ) {
         block( msg, out );
-        r.collect( "META-INF/deegree/log4j", new Predicate<String>() {
+
+        // seems to scan automatically without requesting something
+        new Reflections( "META-INF.deegree", new AbstractScanner() {
+
             @Override
-            public boolean apply( String input ) {
-                return input != null && input.equals( type );
+            public void setConfiguration( Configuration configuration ) {
             }
-        }, new Serializer() {
+
             @Override
-            public Reflections read( InputStream in ) {
+            public Multimap<String, String> getStore() {
+                return null;
+            }
+
+            @Override
+            public void setStore( Multimap<String, String> store ) {
+            }
+
+            @Override
+            public Scanner filterResultsBy( Predicate<String> filter ) {
+                return null;
+            }
+
+            @Override
+            public boolean acceptsInput( String file ) {
+                return file.equals( "META-INF.deegree.log4j-" + version + "." + type.toLowerCase() );
+            }
+
+            @Override
+            public void scan( Vfs.File file ) {
                 try {
-                    copy( in, out );
+                    InputStream in = file.openInputStream();
+                    BufferedReader reader = new BufferedReader( new InputStreamReader( in, "UTF-8" ) );
+                    String line;
+                    while ( ( line = reader.readLine() ) != null ) {
+                        out.println( line );
+                    }
                 } catch ( IOException e ) {
-                    getLog().error( e );
+                    LOG.error( "Trouble extracting the log4j snippet: " + e.getMessage() );
+                    LOG.error( "This shouldn't happen, set log level to debug to see the stack trace." );
+                    LOG.debug( e.getMessage(), e );
                 }
-                return r;
             }
 
             @Override
-            public File save( Reflections reflections, String filename ) {
-                return null;
+            public void scan( Object cls ) {
             }
 
             @Override
-            public String toString( Reflections reflections ) {
-                return null;
+            public boolean acceptResult( String fqn ) {
+                return fqn.equals( "META-INF.deegree.log4j." + type.toLowerCase() );
             }
         } );
     }
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
-        if ( new File( project.getBasedir(), "src/main/resources/log4j.properties" ).exists() ) {
-            getLog().info( "Skipping generation of log4j.properties as it already exists in src/main/resources." );
+                            throws MojoExecutionException,
+                            MojoFailureException {
+        if ( new File( project.getBasedir(), "src/main/resources/log4j2.xml" ).exists() ) {
+            getLog().info( "Skipping generation of log4j2.xml as it already exists in src/main/resources." );
             return;
         }
+        String version = project.getVersion();
 
-        addDependenciesToClasspath( project, artifactResolver, artifactFactory, metadataSource, localRepository );
+        addDependenciesToClasspath( project, artifactResolver, repositorySystem, localRepository );
 
-        final Reflections r = new Reflections( "/META-INF/deegree" );
         // to work around stupid initialization compiler error (hey, it's defined to be null if not 'initialized'!)
         PrintWriter o = null;
         final PrintWriter out;
         try {
-            File outFile = new File( project.getBasedir(), "target/generated-resources/log4j.properties" );
+            File outFile = new File( project.getBasedir(), "target/generated-resources/log4j2.xml" );
             if ( !outFile.getParentFile().exists() && !outFile.getParentFile().mkdirs() ) {
                 throw new MojoFailureException( "Could not create parent directory: " + outFile.getParentFile() );
             }
             out = new PrintWriter( new OutputStreamWriter( new FileOutputStream( outFile ), "UTF-8" ) );
 
-            out.println( "# by default, only log to stdout" );
-            out.println( "log4j.rootLogger=" + rootLoggingLevel + ", stdout" );
-            out.println( "log4j.appender.stdout=org.apache.log4j.ConsoleAppender" );
-            out.println( "log4j.appender.stdout.layout=org.apache.log4j.PatternLayout" );
-            out.println( "log4j.appender.stdout.layout.ConversionPattern=[%d{HH:mm:ss}] %5p: [%c{1}] %m%n" );
-            out.println();
-            out.println( "## example log file appender" );
-            out.println( "## ${context.name} as variable in log file names is NOT supported any more (it breaks more often than not)" );
-            out.println();
-            out.println( "#log.dir=${catalina.base}/logs" );
-            out.println( "#log4j.appender.logfile=org.apache.log4j.RollingFileAppender" );
-            out.println( "#log4j.appender.logfile.File=${log.dir}/example.log" );
-            out.println( "#log4j.appender.logfile.MaxFileSize=1000KB" );
-            out.println( "## Keep one backup file" );
-            out.println( "#log4j.appender.logfile.MaxBackupIndex=1" );
-            out.println( "#log4j.appender.logfile.layout=org.apache.log4j.PatternLayout" );
-            out.println( "#log4j.appender.logfile.layout.ConversionPattern=%d %-5p [%c] %m%n" );
+            out.println( "<!-- by default, only log to stdout -->" );
+            out.println( "<Configuration>" );
+            out.println( "  <Appenders>" );
+            out.println( "    <Console name=\"stdout\" target=\"SYSTEM_OUT\">" );
+            out.println( "      <PatternLayout pattern=\"[%d{HH:mm:ss}] %5p: [%c{1}] %m%n\">" );
+            out.println( "    </Console>" );
+            out.println( "    <!-- example log file appender -->" );
+            out.println( "    <!-- RollingFile name=\"MyFile\" fileName=\"logs/app.log\">" );
+            out.println( "      <PatternLayout pattern=\"[%d{HH:mm:ss}] %5p: [%c{1}] %m%n\">" );
+            out.println( "        <Policies>" );
+            out.println( "          <TimeBasedTriggeringPolicy />" );
+            out.println( "          <SizeBasedTriggeringPolicy size=\"1000KB\" />" );
+            out.println( "        </Policies>" );
+            out.println( "        <DefaultRolloverStrategy />" );
+            out.println( "    </RollingFile -->" );
+            out.println( "  </Appenders>" );
+            out.println( "  <Loggers>" );
             out.println();
 
-            out.println( "# The log level for the org.reflections package (to avoid superfluous messages)." );
-            out.println( "log4j.logger.org.reflections = FATAL" );
+            out.println( "    <!-- The log level for all classes that are not configured below. -->" );
+            out.println( "    <AsyncLogger name=\"org.reflections\" level=\"FATAL\" />" );
             out.println();
-            out.println( "# The log level for all classes that are not configured below." );
-            out.println( "log4j.logger.org.deegree = " + deegreeLoggingLevel );
+            out.println( "    <!-- The log level for all classes that are not configured below. -->" );
+            out.println( "    <AsyncLogger name=\"org.deegree\" level=\"" + deegreeLoggingLevel + "\" />" );
             out.println();
-            out.println( "# automatically generated output follows" );
+            out.println( "    <!-- automatically generated output follows -->" );
             out.println();
 
             o = out;
 
-            collect( r, "error", "Severe error messages", out );
-            collect( r, "warn", "Important warning messages", out );
-            collect( r, "info", "Informational messages", out );
-            collect( r, "debug", "Debugging messages, useful for in-depth debugging of e.g. service setups", out );
-            collect( r, "trace", "Tracing messages, for developers only", out );
-        } catch ( FileNotFoundException e ) {
-            getLog().error( e );
-        } catch ( UnsupportedEncodingException e ) {
+            collect( "ERROR", "Severe error messages", out, version );
+            collect( "WARN", "Important warning messages", out, version );
+            collect( "INFO", "Informational messages", out, version );
+            collect( "DEBUG", "Debugging messages, useful for in-depth debugging of e.g. service setups", out, version );
+            collect( "TRACE", "Tracing messages, for developers only", out, version );
+
+            out.println( "    <AsyncRoot level=\"" + rootLoggingLevel + "\">" );
+            out.println( "      <AppenderRef ref=\"stdout\" />" );
+            out.println( "    </AsyncRoot>" );
+
+            out.println( "  </Loggers>" );
+            out.println( "</Configuration>" );
+        } catch ( IOException e ) {
             getLog().error( e );
         } finally {
             closeQuietly( o );

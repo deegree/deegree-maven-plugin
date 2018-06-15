@@ -44,24 +44,24 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 /**
- * @goal copy
- * @phase generate-resources
- * 
+ *
  * @author <a href="mailto:schmitz@lat-lon.de">Andreas Schmitz</a>
  * @author last edited by: $Author$
  * 
  * @version $Revision$, $Date$
  */
+@Execute(goal = "copy", phase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "copy")
 public class CopyMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}")
     private MavenProject project;
 
     /**
@@ -71,7 +71,8 @@ public class CopyMojo extends AbstractMojo {
 
     @Override
     public void execute()
-                            throws MojoExecutionException, MojoFailureException {
+                            throws MojoExecutionException,
+                            MojoFailureException {
         Log log = getLog();
         if ( files == null ) {
             log.debug( "No files configured." );
