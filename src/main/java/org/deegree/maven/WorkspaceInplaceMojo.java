@@ -64,7 +64,7 @@ import org.apache.maven.repository.RepositorySystem;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "workspace-inplace", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "workspace-inplace")
+@Mojo(name = "workspace-inplace", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class WorkspaceInplaceMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

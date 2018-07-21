@@ -58,7 +58,7 @@ import org.apache.maven.project.MavenProject;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "copy", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "copy")
+@Mojo(name = "copy", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class CopyMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}")

@@ -67,7 +67,7 @@ import com.google.common.collect.Multimap;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "assemble-log4j", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "assemble-log4j")
+@Mojo(name = "assemble-log4j", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class Log4jMojo extends AbstractMojo {
 
     private static Logger LOG = getLogger( Log4jMojo.class );

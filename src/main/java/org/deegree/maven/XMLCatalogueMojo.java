@@ -68,7 +68,7 @@ import com.google.common.base.Predicate;
  * @version $Revision: 31419 $, $Date: 2011-08-02 17:42:17 +0200 (Tue, 02 Aug 2011) $
  */
 @Execute(goal = "generate-jaxb-catalog", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "generate-jaxb-catalog")
+@Mojo(name = "generate-jaxb-catalog", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class XMLCatalogueMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

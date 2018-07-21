@@ -69,7 +69,7 @@ import org.deegree.maven.utils.HttpUtils;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "test-workspaces", phase = LifecyclePhase.INTEGRATION_TEST)
-@Mojo(name = "test-workspaces")
+@Mojo(name = "test-workspaces", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class WorkspaceITMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

@@ -69,7 +69,7 @@ import org.deegree.maven.utils.ZipUtils;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "attach-workspace", phase = LifecyclePhase.PACKAGE)
-@Mojo(name = "attach-workspace")
+@Mojo(name = "attach-workspace", defaultPhase = LifecyclePhase.PACKAGE)
 public class WorkspaceMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

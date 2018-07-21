@@ -55,7 +55,7 @@ import org.apache.maven.project.MavenProject;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "generate-portnumber", phase = LifecyclePhase.INITIALIZE)
-@Mojo(name = "generate-portnumber")
+@Mojo(name = "generate-portnumber", defaultPhase = LifecyclePhase.INITIALIZE)
 public class PortnumberMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
