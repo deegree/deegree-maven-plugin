@@ -47,10 +47,16 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.ConnectionConfig;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.deegree.maven.ithelper.ServiceIntegrationTestHelper;
@@ -66,11 +72,11 @@ import org.deegree.maven.ithelper.ServiceIntegrationTestHelper;
 public class HttpUtils {
 
     public static HttpClient getAuthenticatedHttpClient( ServiceIntegrationTestHelper helper ) {
-        DefaultHttpClient client = new DefaultHttpClient();
-        HttpConnectionParams.setConnectionTimeout( client.getParams(), 30000 );
-        HttpConnectionParams.setSoTimeout( client.getParams(), 1200000 );
-        client.getCredentialsProvider().setCredentials( AuthScope.ANY,
-                                                        new UsernamePasswordCredentials( "deegree", "deegree" ) );
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        CredentialsProvider creds = new BasicCredentialsProvider();
+        creds.setCredentials( AuthScope.ANY, new UsernamePasswordCredentials( "deegree", "deegree" ) );
+        builder.setDefaultCredentialsProvider( creds );
+        HttpClient client = builder.build();
         // preemptive authentication used to be easier in pre-4.x httpclient
         AuthCache authCache = new BasicAuthCache();
         BasicScheme basicAuth = new BasicScheme();

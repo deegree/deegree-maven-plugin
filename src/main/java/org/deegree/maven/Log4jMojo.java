@@ -41,6 +41,7 @@ import static org.deegree.maven.utils.ClasspathHelper.addDependenciesToClasspath
 
 import java.io.*;
 
+import org.apache.http.protocol.SyncBasicHttpContext;
 import org.apache.log4j.Logger;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
@@ -148,7 +149,7 @@ public class Log4jMojo extends AbstractMojo {
             }
 
             @Override
-            public void scan( Vfs.File file ) {
+            public Object scan( Vfs.File file, Object classObject ) {
                 try {
                     InputStream in = file.openInputStream();
                     BufferedReader reader = new BufferedReader( new InputStreamReader( in, "UTF-8" ) );
@@ -161,6 +162,7 @@ public class Log4jMojo extends AbstractMojo {
                     LOG.error( "This shouldn't happen, set log level to debug to see the stack trace." );
                     LOG.debug( e.getMessage(), e );
                 }
+                return classObject;
             }
 
             @Override

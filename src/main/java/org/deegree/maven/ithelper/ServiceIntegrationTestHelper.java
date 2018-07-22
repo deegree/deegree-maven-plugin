@@ -107,7 +107,9 @@ public class ServiceIntegrationTestHelper {
             String input = IOUtils.toString( new URL( address ).openStream(), "UTF-8" );
             XMLInputFactory fac = XMLInputFactory.newInstance();
             XMLStreamReader in = fac.createXMLStreamReader( new StringReader( input ) );
-            in.next();
+            while (!in.isStartElement()) {
+                in.next();
+            }
             if ( in.getLocalName().toLowerCase().contains( "exception" ) ) {
                 log.error( "Actual response was:" );
                 log.error( input );
