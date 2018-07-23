@@ -95,7 +95,7 @@ public class ClasspathHelper {
             return result.getArtifacts();
         }
 
-        LinkedHashSet<Artifact> set = new LinkedHashSet<Artifact>();
+        LinkedHashSet<Artifact> set = new LinkedHashSet<>();
         if ( mainArtifact.getType() != null && mainArtifact.getType().equals( type ) ) {
             set.add( mainArtifact );
         }

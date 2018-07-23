@@ -41,7 +41,6 @@ import static org.deegree.maven.utils.ClasspathHelper.addDependenciesToClasspath
 
 import java.io.*;
 
-import org.apache.http.protocol.SyncBasicHttpContext;
 import org.apache.log4j.Logger;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
@@ -91,7 +90,7 @@ public class Log4jMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(property = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     private void block( String text, PrintWriter out ) {

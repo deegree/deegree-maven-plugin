@@ -80,7 +80,7 @@ public class XMLCatalogueMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(name = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     @Override

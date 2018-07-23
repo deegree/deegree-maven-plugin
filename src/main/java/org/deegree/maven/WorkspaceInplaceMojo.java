@@ -76,7 +76,7 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(name = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     /**
@@ -101,6 +101,10 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
 
             for ( Object o : workspaces ) {
                 Artifact a = (Artifact) o;
+                if ( a.getArtifactId().equals( project.getArtifactId() )
+                     && a.getGroupId().equals( project.getArtifactId() ) ) {
+                    continue;
+                }
                 log.info( "Unpacking workspace " + a.getArtifactId() );
                 FileInputStream in = new FileInputStream( a.getFile() );
                 try {
