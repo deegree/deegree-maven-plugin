@@ -35,15 +35,8 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven.utils;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.RepositorySystem;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -54,8 +47,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.lang.Thread.currentThread;
-import static java.security.AccessController.doPrivileged;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 
 /**
  * 
@@ -100,8 +100,11 @@ public class ClasspathHelper {
             set.add( mainArtifact );
         }
         set.addAll( artifacts );
+        Set<Artifact> collected = set.stream()
+                .filter(dep -> dep.getType().equals(type))
+                .collect(Collectors.toSet());
 
-        return set;
+        return collected;
     }
 
     private static Set<?> resolveDeps( MavenProject project, ArtifactResolver artifactResolver,
