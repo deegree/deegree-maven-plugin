@@ -63,7 +63,7 @@ import com.google.common.base.Predicate;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "assemble-console", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "assemble-console")
+@Mojo(name = "assemble-console", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class ConsoleMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -75,7 +75,7 @@ public class ConsoleMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(property = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     String input;

@@ -47,6 +47,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.util.EntityUtils;
 import org.apache.maven.artifact.Artifact;
@@ -69,7 +70,7 @@ import org.deegree.maven.utils.HttpUtils;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "test-workspaces", phase = LifecyclePhase.INTEGRATION_TEST)
-@Mojo(name = "test-workspaces")
+@Mojo(name = "test-workspaces", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class WorkspaceITMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -111,7 +112,7 @@ public class WorkspaceITMojo extends AbstractMojo {
 
                 getLog().info( "Sending against: " + url );
                 HttpPost post = new HttpPost( url );
-                post.setEntity( new FileEntity( file, null ) );
+                post.setEntity( new FileEntity( file, (ContentType) null ) );
                 resp = client.execute( post );
                 response = EntityUtils.toString( resp.getEntity() ).trim();
                 getLog().info( "Response after uploading was: " + response );

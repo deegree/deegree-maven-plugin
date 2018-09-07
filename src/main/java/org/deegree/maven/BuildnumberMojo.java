@@ -60,7 +60,7 @@ import org.apache.maven.project.MavenProject;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "generate-buildinfo", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "generate-buildinfo")
+@Mojo(name = "generate-buildinfo", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class BuildnumberMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

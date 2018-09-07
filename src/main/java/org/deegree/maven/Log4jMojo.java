@@ -67,7 +67,7 @@ import com.google.common.collect.Multimap;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "assemble-log4j", phase = LifecyclePhase.GENERATE_RESOURCES)
-@Mojo(name = "assemble-log4j")
+@Mojo(name = "assemble-log4j", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class Log4jMojo extends AbstractMojo {
 
     private static Logger LOG = getLogger( Log4jMojo.class );
@@ -90,7 +90,7 @@ public class Log4jMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(property = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     private void block( String text, PrintWriter out ) {
@@ -148,7 +148,7 @@ public class Log4jMojo extends AbstractMojo {
             }
 
             @Override
-            public void scan( Vfs.File file ) {
+            public Object scan( Vfs.File file, Object classObject ) {
                 try {
                     InputStream in = file.openInputStream();
                     BufferedReader reader = new BufferedReader( new InputStreamReader( in, "UTF-8" ) );
@@ -161,6 +161,7 @@ public class Log4jMojo extends AbstractMojo {
                     LOG.error( "This shouldn't happen, set log level to debug to see the stack trace." );
                     LOG.debug( e.getMessage(), e );
                 }
+                return classObject;
             }
 
             @Override

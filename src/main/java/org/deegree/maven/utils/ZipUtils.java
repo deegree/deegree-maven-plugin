@@ -82,7 +82,8 @@ public class ZipUtils {
         }
     }
 
-    public static void zipJarDependencies( Set<?> jarDeps, Log log, HashSet<String> visitedFiles, ZipOutputStream out ) {
+    public static void zipJarDependencies( Set<?> jarDeps, Log log, HashSet<String> visitedFiles,
+                                           ZipOutputStream out ) {
         for ( Object o : jarDeps ) {
             Artifact a = (Artifact) o;
             if ( a.getScope() == null || a.getScope().equalsIgnoreCase( "runtime" )
@@ -110,6 +111,10 @@ public class ZipUtils {
         for ( Artifact a : workspaces ) {
             log.info( "Processing files in dependency " + a.getArtifactId() );
             File tmp = new File( target, a.getArtifactId() );
+            if ( !a.getFile().exists() ) {
+                // happens if the main artifact has not been built yet
+                continue;
+            }
             FileInputStream in = new FileInputStream( a.getFile() );
             try {
                 unzip( in, tmp );

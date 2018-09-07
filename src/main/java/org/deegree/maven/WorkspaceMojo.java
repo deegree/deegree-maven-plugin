@@ -69,7 +69,7 @@ import org.deegree.maven.utils.ZipUtils;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "attach-workspace", phase = LifecyclePhase.PACKAGE)
-@Mojo(name = "attach-workspace")
+@Mojo(name = "attach-workspace", defaultPhase = LifecyclePhase.PACKAGE)
 public class WorkspaceMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -82,7 +82,7 @@ public class WorkspaceMojo extends AbstractMojo {
     @Component
     private RepositorySystem repositorySystem;
 
-    @Parameter(property = "localRepository")
+    @Parameter(defaultValue = "${localRepository}")
     private ArtifactRepository localRepository;
 
     @Component
@@ -102,7 +102,12 @@ public class WorkspaceMojo extends AbstractMojo {
                                                        "deegree-workspace", true );
             List<Artifact> workspaces = new ArrayList<>();
             for ( Object o : artifacts ) {
-                workspaces.add( (Artifact) o );
+                Artifact a = (Artifact) o;
+                if ( project.getArtifactId().equals( a.getArtifactId() )
+                     && project.getGroupId().equals( a.getGroupId() ) ) {
+                    continue;
+                }
+                workspaces.add( a );
             }
             reverse( workspaces );
 
@@ -139,7 +144,7 @@ public class WorkspaceMojo extends AbstractMojo {
         log.info( "Attaching " + workspaceFile );
         Artifact artifact = project.getArtifact();
         if ( artifact.getType() == null || !artifact.getType().equals( "deegree-workspace" ) ) {
-            projectHelper.attachArtifact( project, "deegreeworkspace", workspaceFile );
+            projectHelper.attachArtifact( project, "deegree-workspace", workspaceFile );
         }
 
         artifact.setFile( workspaceFile );

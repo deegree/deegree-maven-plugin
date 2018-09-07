@@ -55,7 +55,7 @@ import org.deegree.maven.ithelper.ServiceIntegrationTestHelper;
  * @version $Revision$, $Date$
  */
 @Execute(goal = "test-services", phase = LifecyclePhase.INTEGRATION_TEST)
-@Mojo(name = "test-services")
+@Mojo(name = "test-services", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class ServiceIntegrationTestMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
