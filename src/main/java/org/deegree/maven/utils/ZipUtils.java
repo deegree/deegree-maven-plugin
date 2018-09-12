@@ -41,9 +41,9 @@
 
 package org.deegree.maven.utils;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
-import static org.apache.commons.io.IOUtils.copy;
-import static org.deegree.commons.utils.io.Zip.unzip;
+import org.apache.commons.io.IOUtils;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,9 +55,9 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.plugin.logging.Log;
+import static org.apache.commons.io.IOUtils.closeQuietly;
+import static org.apache.commons.io.IOUtils.copy;
+import static org.deegree.commons.utils.io.Zip.unzip;
 
 /**
  * Utilities to zip workspace parts.
@@ -86,6 +86,10 @@ public class ZipUtils {
                                            ZipOutputStream out ) {
         for ( Object o : jarDeps ) {
             Artifact a = (Artifact) o;
+            // ignore root artifact, they don't have a file yet in never maven versions
+            if (a.getFile() == null) {
+                continue;
+            }
             if ( a.getScope() == null || a.getScope().equalsIgnoreCase( "runtime" )
                  || a.getScope().equalsIgnoreCase( "compile" ) ) {
                 log.info( "Adding " + a + " to workspace modules directory." );
