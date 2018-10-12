@@ -35,26 +35,25 @@
  ----------------------------------------------------------------------------*/
 package org.deegree.maven;
 
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
-import static org.apache.commons.io.IOUtils.closeQuietly;
-import static org.deegree.commons.utils.io.Zip.unzip;
-import static org.deegree.maven.utils.ClasspathHelper.getDependencyArtifacts;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Set;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.*;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.RepositorySystem;
+import static org.apache.commons.io.FileUtils.copyFileToDirectory;
+import static org.apache.commons.io.IOUtils.closeQuietly;
+import static org.deegree.commons.utils.io.Zip.unzip;
+import static org.deegree.maven.utils.ClasspathHelper.getDependencyArtifacts;
 
 /**
  *
@@ -87,8 +86,7 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
 
     @Override
     public void execute()
-                            throws MojoExecutionException,
-                            MojoFailureException {
+                            throws MojoFailureException {
         Log log = getLog();
 
         File dir = determineWorkspaceDirectory();
@@ -134,6 +132,10 @@ public class WorkspaceInplaceMojo extends AbstractMojo {
             Artifact a = (Artifact) o;
             if ( a.getScope() == null || a.getScope().equalsIgnoreCase( "runtime" )
                  || a.getScope().equalsIgnoreCase( "compile" ) ) {
+                // ignore root artifact, they don't have a file yet in never maven versions
+                if (a.getFile() == null) {
+                    continue;
+                }
                 log.info( "Copying " + a + " to workspace modules directory." );
                 copyFileToDirectory( a.getFile(), modules );
             }
