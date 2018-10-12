@@ -75,7 +75,7 @@ public class ClasspathHelper {
                                                  boolean transitively ) {
 
         List<Dependency> dependencies = project.getDependencies();
-        Set<Artifact> artifacts = dependencies.parallelStream()
+        Set<Artifact> artifacts = dependencies.stream()
                 .filter((Dependency dep) -> dep.getType().equals(type))
                 .map(
                     (Dependency dep) -> repositorySystem.createArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), dep.getScope(), dep.getType()))
@@ -113,7 +113,7 @@ public class ClasspathHelper {
 
         List<Dependency> dependencies = project.getDependencies();
 
-        Set<Artifact> artifacts = dependencies.parallelStream()
+        Set<Artifact> artifacts = dependencies.stream()
                 .map(
                         (Dependency dep) -> repositorySystem.createArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), dep.getScope(), dep.getType()))
                 .collect(Collectors.toSet());
