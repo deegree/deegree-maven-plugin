@@ -100,7 +100,7 @@
                   <version>${maven.version}</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>1.8</version>
+                  <version>${java.version}</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
