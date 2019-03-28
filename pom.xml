@@ -16,13 +16,18 @@
   <parent>
     <groupId>org.deegree</groupId>
     <artifactId>deegree</artifactId>
-    <version>3.4.2</version>
-    <relativePath />
+    <version>3.4.4</version>
   </parent>
 
   <properties>
     <java.version>1.8</java.version>
+    <deegree.version>3.4.4</deegree.version>
+    <maven.version>3.5.2</maven.version>
   </properties>
+
+  <prerequisites>
+    <maven>${maven.version}</maven>
+  </prerequisites>
 
   <repositories>
     <repository>
@@ -62,7 +67,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>${maven.version}</version>
       </plugin>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -76,6 +81,29 @@
               <configuration>
               <doclint>none</doclint>
           </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${maven.version}</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version}</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -116,20 +144,20 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>3.5.4</version>
+      <version>${maven.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.5.2</version>
+      <version>${maven.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>3.5.4</version>
+      <version>${maven.version}</version>
     </dependency>
 
     <dependency>
@@ -147,13 +175,25 @@
     <dependency>
       <groupId>org.deegree</groupId>
       <artifactId>deegree-core-base</artifactId>
-      <version>3.4.2</version>
+      <version>${deegree.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.deegree</groupId>
+      <artifactId>deegree-core-commons</artifactId>
+      <version>${deegree.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.deegree</groupId>
+      <artifactId>deegree-core-geometry</artifactId>
+      <version>${deegree.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.deegree</groupId>
       <artifactId>deegree-protocol-wms</artifactId>
-      <version>3.4.2</version>
+      <version>${deegree.version}</version>
     </dependency>
   </dependencies>
 
